@@ -1,54 +1,97 @@
-# LitePolis Router Database Example
+# LitePolis Database Example
 
-This repository provides a working example of a database module for LitePolis, using SQLite as the database. It demonstrates how to create, read, update, and delete data using FastAPI and SQLModel.  You can use this example as a starting point to build your own custom database modules for LitePolis.
+This repository provides a working example of a database module for LitePolis, using SQLite as the database backend. It demonstrates a structured approach to database interactions using SQLModel and a Manager/Actor pattern, separating database logic from potential API layers.
+
+This example is based on the `LitePolis-database-template` and showcases how to implement database operations for Users, Conversations, and Comments. You can use this example as a starting point to build your own custom database modules for LitePolis.
+
+## Core Concepts: Manager Pattern
+
+This module utilizes a Manager pattern to organize database operations:
+
+1.  **SQLModels:** Define the database table structure (e.g., `User`, `Conversation`, `Comment` in `Users.py`, `Conversations.py`, `Comments.py`).
+2.  **Manager Classes:** Each model has a corresponding Manager class (e.g., `UserManager`, `ConversationManager`) located in the same file. These classes contain static methods that encapsulate the specific CRUD (Create, Read, Update, Delete) logic for that model, using a shared database session (`with_session` from `utils.py`).
+3.  **DatabaseActor:** A central `DatabaseActor` class (`Actor.py`) inherits from all Manager classes. This provides a single, unified interface to access all database operations for the module.
+
+```mermaid
+graph LR
+    subgraph litepolis_router_database_sqlite
+        DA[DatabaseActor] --> UM(UserManager)
+        DA --> CM(ConversationManager)
+        DA --> CMM(CommentManager)
+
+        UM --> User(User SQLModel)
+        UM --> utils(utils.py: get_session)
+
+        CM --> Conv(Conversation SQLModel)
+        CM --> utils
+
+        CMM --> Comm(Comment SQLModel)
+        CMM --> utils
+    end
+
+    style DA fill:#f9f,stroke:#333,stroke-width:2px
+    style UM fill:#ccf,stroke:#333,stroke-width:1px
+    style CM fill:#ccf,stroke:#333,stroke-width:1px
+    style CMM fill:#ccf,stroke:#333,stroke-width:1px
+```
+
+This pattern promotes separation of concerns: the database module focuses solely on data persistence logic, while the main LitePolis application (or a separate router module) would handle API endpoints and call methods on the `DatabaseActor`.
 
 ## Getting Started
 
 Follow these steps to understand and adapt this example for your own LitePolis database module:
 
-1. **Clone the Repository:** Clone this repository to your local machine.
+1.  **Clone the Repository:** Clone this repository to your local machine.
 
-2. **Install Dependencies:** Install the required Python packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+2.  **Install Dependencies:** Install the required Python packages. Note that `fastapi` is *not* a direct dependency of this module anymore; it depends on `litepolis` and `sqlmodel`.
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-3. **Examine `setup.py`:** This file contains metadata about the example package.  When creating your own module, you'll need to change the following:
-    * `name`: Change to your package's unique name (e.g., `litepolis-router-mydatabase`).
-    * `version`, `description`, `author`, `url`: Update these fields accordingly.
-    * `install_requires`: Add any additional dependencies your module requires.
+3.  **Examine `setup.py`:** This file contains metadata about the package.
+    *   `name`: Change to your package's unique name (e.g., `litepolis-mydatabase`).
+    *   `version`, `description`, `author`, `url`: Update these fields.
+    *   `install_requires`: Should list runtime dependencies like `litepolis` and `sqlmodel`. Add any others your specific logic requires.
 
-4. **Understand the Core Logic (`litepolis_router_database_sqlite/core.py`):** This file sets up the FastAPI router and includes the routers for different data models (Users, Conversations, Comments).  The `init` function initializes the router, optionally taking a configuration object. The `DEFAULT_CONFIG` dictionary provides default configuration settings. When building your own module, you'll likely add more routers here for your specific data models.  The `prefix` variable is used to define the API endpoint prefix.
+4.  **Understand the Structure (`litepolis_database_example/`):**
+    *   **`utils.py`:** Sets up the database engine (`create_engine`) and provides the `with_session` context manager for database interactions. It also defines `DEFAULT_CONFIG`.
+    *   **`Users.py`, `Conversations.py`, `Comments.py`:** Each file defines:
+        *   A SQLModel class for the data table (e.g., `User`).
+        *   A Manager class (e.g., `UserManager`) with static methods for CRUD operations using `with_session`.
+    *   **`Actor.py`:** Defines the `DatabaseActor` class, inheriting from all Manager classes.
+    *   **`__init__.py`:** Exports the key components (`DatabaseActor`, SQLModels, `DEFAULT_CONFIG`) for use by other parts of LitePolis.
 
-5. **Explore Data Models (`litepolis_router_database_sqlite/Users.py`, `Conversations.py`, `Comments.py`):** These files define the data models using SQLModel and implement the CRUD operations for each model.  Study these files to understand how to:
-    * Define SQLModel classes for your tables.
-    * Create FastAPI endpoints for each CRUD operation.
-    * Use the `get_session` dependency for database interaction.
-    * Handle errors and return appropriate responses.
+5.  **Adapt and Extend:**
+    *   Rename the `litepolis_database_example` folder to your desired package name (e.g., `litepolis_database_mydatabase`). Update imports accordingly.
+    *   **Create New Models/Managers:** For new data types, create a new Python file (e.g., `Products.py`). Inside, define your `Product` SQLModel and a `ProductManager` class with static CRUD methods using `get_session`.
+    *   **Update `Actor.py`:** Add your new `ProductManager` to the inheritance list of `DatabaseActor`.
+        ```python
+        from .Products import ProductManager
+        # ... other imports ...
 
-6. **Adapt and Extend:**  Rename the entire `litepolis_router_database_sqlite` folder to your desired package name (e.g., `litepolis_router_mydatabase`).  Then, modify the files within this folder to implement your own database logic.  You'll need to:
-    * Create new SQLModel classes for your tables.
-    * Create corresponding FastAPI endpoints in separate files (like `Users.py`).
-    * Include your new routers in the `core.py` file of your new package.
-    * Update the tests in the `tests` folder to cover your new functionality.  Note that the `DEFAULT_CONFIG` and `init` function are crucial for the package manager to correctly initialize and start the services.
+        class DatabaseActor(UserManager, ConversationManager, CommentManager, ProductManager):
+            pass
+        ```
+    *   **Update `__init__.py`:** Export your new `Product` model and potentially the `ProductManager` if needed externally. Update the `__all__` list.
+    *   **Update `setup.py`:** Adjust metadata (`name`, `version`, etc.).
+    *   **Update `requirements.txt`:** Add any new dependencies required by your managers.
 
-7. **Testing (`tests` folder):**  The `tests` folder contains example tests using `pytest`.  Examine `test_Users.py`, `test_Conversations.py`, and `test_Comments.py` to understand how to write tests for your database module.  When adapting this example, update these tests to reflect your changes and add new tests for your own data models and endpoints.  Run the tests using:
-   ```bash
-   pytest
-   ```
+6.  **Testing (`tests` folder):**
+    *   The tests (`test_Users.py`, `test_Conversations.py`, `test_Comments.py`, `test_Actor.py`) demonstrate how to test the database logic by directly calling methods on the `DatabaseActor`.
+    *   When adapting this example, update existing tests and add new ones for your models, ensuring you test the methods within your new Manager classes via the `DatabaseActor`.
+    *   Run tests using:
+        ```bash
+        pytest
+        ```
 
-8. Release your package to PyPI so that LitePolis package manager can automatically fetch the package during deployment.
+7.  **Integration with LitePolis:** This module provides the `DatabaseActor`. The main LitePolis application or a dedicated LitePolis router module would import and use this `DatabaseActor` to interact with the database, potentially exposing operations via API endpoints.
 
-9. Document the pre-requirements for deployment (e.g., Setup MySQL with `docker run -d MySQL` and edit the config first before serving the LitePolis system)
+8.  **Deployment:**
+    *   Release your package to PyPI so the LitePolis package manager can fetch it.
+    *   Document any pre-requirements for your specific database backend (e.g., setting up PostgreSQL, MySQL). The example uses SQLite (`database.db`), which requires no external setup.
 
-## Key Concepts and Hints
+## Key Libraries
 
-* **SQLModel:**  This library simplifies database interactions by mapping Python classes to database tables.  Learn more about SQLModel here: [https://sqlmodel.tiangolo.com/](https://sqlmodel.tiangolo.com/)
-
-* **FastAPI:**  FastAPI is used to create the API endpoints.  Refer to the FastAPI documentation for details: [https://fastapi.tiangolo.com/](https://fastapi.tiangolo.com/)
-
-* **Dependency Injection:**  The `get_session` dependency ensures that each endpoint has access to a database session.
-
-* **Testing with Pytest:**  Pytest is used for writing and running tests.  See the pytest documentation for more information: [https://docs.pytest.org/en/7.1.x/](https://docs.pytest.org/en/7.1.x/)
-
-
+*   **SQLModel:** Simplifies database interactions by combining Pydantic and SQLAlchemy. [https://sqlmodel.tiangolo.com/](https://sqlmodel.tiangolo.com/)
+*   **Pytest:** Used for writing and running tests. [https://docs.pytest.org/en/stable/](https://docs.pytest.org/en/stable/)
+*   **LitePolis:** The framework this module is designed to integrate with. [https://github.com/NewJerseyStyle/LitePolis](https://github.com/NewJerseyStyle/LitePolis).
