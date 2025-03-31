@@ -4,6 +4,8 @@ This repository provides a working example of a database module for LitePolis, u
 
 This example is based on the `LitePolis-database-template` and showcases how to implement database operations for Users, Conversations, and Comments. You can use this example as a starting point to build your own custom database modules for LitePolis.
 
+> While this README focus on how to build your own database module, our Wiki shows how to use [this database module](https://github.com/NewJerseyStyle/LitePolis-database-example/wiki/Developer-Manual) 🚀
+
 ## Core Concepts: Manager Pattern
 
 This module utilizes a Manager pattern to organize database operations:
