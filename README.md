@@ -74,6 +74,19 @@ Follow these steps to understand and adapt this example for your own LitePolis d
         class DatabaseActor(UserManager, ConversationManager, CommentManager, ProductManager):
             pass
         ```
+                
+        ```mermaid
+        classDiagram
+            class DatabaseActor {
+                +create_user()
+                +create_conversation()
+                +read_users()
+                +read_conversations()
+            }
+            DatabaseActor --|> UserManager
+            DatabaseActor --|> ConversationManager
+            DatabaseActor --|> CommentManager
+        ```
     *   **Update `__init__.py`:** Export your new `Product` model and potentially the `ProductManager` if needed externally. Update the `__all__` list.
     *   **Update `setup.py`:** Adjust metadata (`name`, `version`, etc.).
     *   **Update `requirements.txt`:** Add any new dependencies required by your managers.
