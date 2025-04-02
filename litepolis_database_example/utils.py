@@ -13,7 +13,7 @@ database_url = DEFAULT_CONFIG.get("sqlite_url")
 # Handle potential test environment override (optional but good practice)
 if ("PYTEST_CURRENT_TEST" not in os.environ and
     "PYTEST_VERSION" not in os.environ):
-    database_url = get_config("sqlite_url")
+    database_url = get_config("litepolis_database_example", "sqlite_url")
 
 engine = create_engine(database_url)
 
