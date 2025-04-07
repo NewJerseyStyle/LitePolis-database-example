@@ -9,7 +9,7 @@ with open('LICENSE') as f:
 
 setup(
     name='litepolis-database-example',                                     # Change
-    version="0.0.1",                                                       # Change
+    version="0.0.2",                                                       # Change
     description='The database module for LitePolis',                       # Change
     long_description=readme,
     long_description_content_type="text/markdown",
